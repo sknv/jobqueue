@@ -54,6 +54,17 @@ func NewJobQueue(limit int, hash Hasher) *JobQueue {
 // Execute adds a job to the sequentially execution queue.
 func (j *JobQueue) Execute(id string, job Job) error {
 	ticket := j.ticketByJobID(id)
+	return j.executeWithTicket(ticket, job)
+}
+
+// ExecuteByHash adds a job with provided hash to the sequentially execution queue.
+func (j *JobQueue) ExecuteByHash(hash int, job Job) error {
+	ticket := j.ticketByHash(hash)
+	return j.executeWithTicket(ticket, job)
+}
+
+// executeWithTicket actually executes a job with provided ticket.
+func (j *JobQueue) executeWithTicket(ticket *sync.Mutex, job Job) error {
 	ticket.Lock()
 	defer ticket.Unlock()
 
@@ -63,5 +74,10 @@ func (j *JobQueue) Execute(id string, job Job) error {
 // ticketByJobID returns a ticket by a provided job id.
 func (j *JobQueue) ticketByJobID(id string) *sync.Mutex {
 	hash := j.hash(id)
+	return j.ticketByHash(hash)
+}
+
+// ticketByHash returns a ticket by a provided hash.
+func (j *JobQueue) ticketByHash(hash int) *sync.Mutex {
 	return j.tickets[hash%j.limit]
 }
